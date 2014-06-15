@@ -1,115 +1,106 @@
-Reproducible Research: Assignment 1
+Reproducible Research: Peer Assessment 1
 ========================================================
 
 
 
-Read the input file
+<h3>Loading and preprocessing the data</h3>
 
 ```r
+# Load the data
+unzip("activity.zip")
 orig_input <- read.csv("activity.csv", stringsAsFactors=FALSE)
+# Process/transform the data (if necessary) into a format suitable for your analysis
 input <- orig_input[!is.na(orig_input$steps),]
 ```
+
+<h3>What is mean total number of steps taken per day?</h3>
 
 
 ```r
 agg <- aggregate(input$steps, list(Date = input$date), sum)
 names(agg) <- c("date", "steps")
-hist(agg$steps)
+# Make a histogram of the total number of steps taken each day
+hist(agg$steps, xlab="Total number of steps taken each day", main="Histogram")
 ```
 
-![plot of chunk question1](figure/question1.png) 
-
-```r
-mean(agg$steps)
-```
-
-```
-## [1] 10766
-```
+![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-1.png) 
 
 ```r
-median(agg$steps)
+# Calculate and report the mean and median total number of steps taken per day
+mea <- mean(agg$steps)
+med <- median(agg$steps)
 ```
 
-```
-## [1] 10765
-```
+Mean: 1.0766 &times; 10<sup>4</sup>  
+Median: 10765
 
+<h3>What is the average daily activity pattern?</h3>
 
 ```r
 agg1 <- aggregate(steps ~ interval, data=input, FUN=mean)
 names(agg1) <- c("interval", "steps")
-agg1[agg1$steps==max(agg1$steps),]$interval
+# Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+plot(agg1$interval, agg1$steps, type='l', xlab="Interval", ylab="Average(Number of steps)", main="Time series plot")
 ```
 
-```
-## [1] 835
-```
-
-```r
-plot(agg1$interval, agg1$steps, type='l')
-```
-
-![plot of chunk question2](figure/question2.png) 
-
+![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2.png) 
 
 ```r
-sum(is.na(orig_input))
+# Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+max_interval <- agg1[agg1$steps==max(agg1$steps),]$interval
 ```
 
-```
-## [1] 2304
-```
+Interval with maximum number of steps: 835
+
+<h3>Imputing missing values</h3>
 
 ```r
+# Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+nas <- sum(is.na(orig_input$steps))
+# Devise a strategy for filling in all of the missing values in the dataset.
+```
+
+Total number of missing values in the dataset: 2304
+
+<h4>Strategy: Use the mean for the 5-minute interval</h4>
+
+
+```r
+# Create a new dataset that is equal to the original dataset but with the missing data filled in.
 new_input <- orig_input
 for(i in seq(1,nrow(new_input))) {
    if(is.na(new_input[i,"steps"])) {
         new_input[i,"steps"] <- agg1[agg1$interval == new_input[i,"interval"],"steps"]
     }
 }
-summary(new_input$steps)
-```
-
-```
-##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##     0.0     0.0     0.0    37.4    27.0   806.0
-```
-
-```r
 agg2 <- aggregate(new_input$steps, list(Date = new_input$date), sum)
 names(agg2) <- c("date", "steps")
-hist(agg2$steps)
+# Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day
+hist(agg2$steps, main="Histogram", xlab="Total number of steps taken each day ")
 ```
 
-![plot of chunk question3](figure/question3.png) 
-
-```r
-mean(agg2$steps)
-```
-
-```
-## [1] 10766
-```
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4.png) 
 
 ```r
-median(agg2$steps)
+mea <- mean(agg2$steps)
+med <- median(agg2$steps)
 ```
 
-```
-## [1] 10766
-```
+New mean: 1.0766 &times; 10<sup>4</sup>  
+New median: 1.0766 &times; 10<sup>4</sup>
 
+<h3>Are there differences in activity patterns between weekdays and weekends?</h3>
 
 ```r
+# Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
 res <- (weekdays(as.Date(new_input$date, "%Y-%m-%d")) == "Sunday"  | weekdays(as.Date(new_input$date, "%Y-%m-%d")) == "Saturday")
 new_input$day <- "weekday"
 new_input[res,"day"] <- "weekend"
+# Make a panel plot containing a time series plot 
 library(lattice)
 agg1 <- aggregate(steps ~ interval + day, data=new_input, FUN=mean)
-##http://www.statmethods.net/advgraphs/trellis.html
 xyplot(agg1$steps ~ agg1$interval | agg1$day, xlab="Interval", ylab="Number of steps", type="l")
 ```
 
-![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-1.png) 
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
 
